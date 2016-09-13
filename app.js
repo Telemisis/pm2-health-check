@@ -126,8 +126,10 @@ el : {
 		pm2.launchBus(function(err, bus) {
 			// listen for healthcheck response here
 			pm2_bus.on('process:msg:healtcheck', function(packet) {
-				// analyse your data here and do what you want like restart or whatever
-				console(packet);
+				if(!packet.data.health){
+					console.log("Error: Restarting process ID "+ packet.process.pm_id);
+					pm2.restart(packet.process.pm_id, function(err, proc){ });
+				}
 			});
 		});					
 	});
