@@ -1,0 +1,23 @@
+{
+  "name": "pm2-health-check",
+  "version": "0.1.0",
+  "description": "A PM2 module to check and restart frozen processes",
+  "main": "app.js",
+  "dependencies": {
+    "pmx" : "beta"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Telemisis/pm2-health-check.git"
+  },
+  "config" : {
+    "timesout" : 1000,
+  },
+  "apps" : [{
+    "merge_logs"         : true,
+    "max_memory_restart" : "200M",
+    "script"             : "app.js"
+  }],
+  "author": "Telemisis Ltd.",
+  "license": "MIT"
+}
