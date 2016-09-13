@@ -128,6 +128,7 @@ el : {
 			pm2_bus.on('process:msg:healtcheck', function(packet) {
 				if(!packet.data.health){
 					console.log("Error: Restarting process ID "+ packet.process.pm_id);
+					metric_failure_count++;
 					pm2.restart(packet.process.pm_id, function(err, proc){ });
 				}
 			});
