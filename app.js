@@ -104,6 +104,18 @@ el : {
 		}
 	});
 
+	var health_check_timeouts = {};
+	var opt = {
+		timeoutMS = 5000
+	};
+
+	var killProcess = function($ID){
+	
+		metric_failure_count++;
+		console.log("Error: Restarting process ID " + packet.process.pm_id);
+		pm2.restart(packet.process.pm_id, function(err, proc){ });
+	}
+
 	// Health check
 	pm2.connect(function() {
 		setInterval(function () {
@@ -111,25 +123,41 @@ el : {
 			pm2.list(function (err, list) {
 				list.forEach(function (process) {
 					// and for each send a healthcheck request
+
+					var health_check_id = process.pm2_env.pm_id + "_" + Math.floor(Date.now() / 1000);
+
+					health_check_timeouts[health_check_id] = setTimeout(function(){
+						health_check_timeouts[health_check_id] = null;
+
+						console.log("Error: Healthcheck for PID "+ process.pm2_env.pm_id +" timed out after " + opt.timeoutMS + "ms");
+						
+						killProcess(process.pm2_env.pm_id);
+					}, opt.timeoutMS);
+
 					pm2.sendDataToProcessId({
 						type : 'healthcheck',
-						data : {},
+						data : {health_check_id: health_check_id},
 						id   : process.pm2_env.pm_id
 					}, function(err, res) {
 						// response will be actually called using the EventBus of pm2
 						// but err can be filled with eventual error while communicating with pm2 daemon
 					});
-				}
-			}
+				});
+			});
 		}, 10000);
 
 		pm2.launchBus(function(err, bus) {
 			// listen for healthcheck response here
 			pm2_bus.on('process:msg:healtcheck', function(packet) {
+
+				// noop if timeout was called and annulled
+				if(!health_check_timeouts[packet.data.health_check_id]) return;
+
+				// cancel timeout (if timeout was set longer, and all parallel tasks finished sooner)
+				clearTimeout(health_check_timeouts[packet.data.health_check_id]);
+
 				if(!packet.data.health){
-					console.log("Error: Restarting process ID "+ packet.process.pm_id);
-					metric_failure_count++;
-					pm2.restart(packet.process.pm_id, function(err, proc){ });
+					killProcess(packet.process.pm_id);
 				}
 			});
 		});					
