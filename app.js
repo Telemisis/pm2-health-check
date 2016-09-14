@@ -112,8 +112,8 @@ el : {
 	var killProcess = function($ID){
 	
 		metric_failure_count++;
-		console.log("Error: Restarting process ID " + packet.process.pm_id);
-		pm2.restart(packet.process.pm_id, function(err, proc){ });
+		console.log("Error: Restarting process ID " + $ID);
+		pm2.restart($ID, function(err, proc){ /*TBD handle failure*/ });
 	}
 
 	// Health check
