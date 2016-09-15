@@ -106,7 +106,7 @@ el : {
 
 	var health_check_timeouts = {};
 	var opt = {
-		timeoutMS = 5000
+		timeoutMS: 5000
 	};
 
 	var killProcess = function($ID){
@@ -116,13 +116,19 @@ el : {
 		pm2.restart($ID, function(err, proc){ /*TBD handle failure*/ });
 	}
 
+	console.log("Starting module");
+
 	// Health check
 	pm2.connect(function() {
+
 		setInterval(function () {
 			// every 10 seconds, list process handled by pm2
 			pm2.list(function (err, list) {
+				console.log("Logging id:" + list.length);
 				list.forEach(function (process) {
 					// and for each send a healthcheck request
+
+					console.log("Checking updates for PID " +process.pm2_env.pm_id );
 
 					var health_check_id = process.pm2_env.pm_id + "_" + Math.floor(Date.now() / 1000);
 
@@ -148,7 +154,7 @@ el : {
 
 		pm2.launchBus(function(err, bus) {
 			// listen for healthcheck response here
-			pm2_bus.on('process:msg:healtcheck', function(packet) {
+			bus.on('process:msg:healthcheck', function(packet) {
 
 				// noop if timeout was called and annulled
 				if(!health_check_timeouts[packet.data.health_check_id]) return;
